@@ -126,7 +126,8 @@ export function openCodeToolTurnItem(
         : recordString(input, "pattern", "query", "path", "filePath");
       // OpenCode reports matches as plain text, so keep it as one result row
       // under the searched path, like the ACP search projection.
-      const searchRoot = (recordString(input, "path", "filePath") ?? pattern)?.trim();
+      const outputRoot = isListing ? output?.split(/\r?\n/, 1)[0]?.trim() || undefined : undefined;
+      const searchRoot = (recordString(input, "path", "filePath") ?? pattern)?.trim() || outputRoot;
       return {
         ...base,
         title:

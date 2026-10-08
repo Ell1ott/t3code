@@ -37,6 +37,18 @@ describe("openCodeToolItems", () => {
     expect(item.results?.[0]?.fileName).toBe("/Users/dev/uwccr-school-scedules");
   });
 
+  it("falls back to the first output line for a bare list with no input path", () => {
+    const item = openCodeToolTurnItem(base, {
+      name: "list",
+      input: {},
+      output: "/work/project/\n  README.md\n",
+      completedMetadata: undefined,
+    });
+    expect(item.type).toBe("file_search");
+    if (item.type !== "file_search") throw new Error("Expected file_search");
+    expect(item.results?.[0]?.fileName).toBe("/work/project/");
+  });
+
   it("stores directory reads without the XML envelope", () => {
     const item = openCodeToolTurnItem(base, {
       name: "read",
