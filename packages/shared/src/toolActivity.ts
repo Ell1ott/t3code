@@ -269,7 +269,8 @@ export function classifyToolActivity(input: {
     toolName === "grep" ||
     toolName === "glob" ||
     toolName === "rg" ||
-    toolName === "ls"
+    toolName === "ls" ||
+    toolName === "list"
   ) {
     return "search";
   }
@@ -370,6 +371,30 @@ export function formatReadToolLabel(path: string, extraCount = 0): string {
     return `Read file${suffix}`;
   }
   return `Read ${trimmed}${suffix}`;
+}
+
+const OPENCODE_READ_TYPE = /<type>\s*(directory|file)\s*<\/type>/iu;
+const OPENCODE_ENTRIES = /<entries>([\s\S]*?)<\/entries>/iu;
+const OPENCODE_CONTENT = /<content>([\s\S]*?)<\/content>/iu;
+
+/**
+ * OpenCode's `read` tool wraps its output in `<path>`/`<type>`/`<entries>` (or
+ * `<content>`) tags. Rendered verbatim the tags read as noise around a plain
+ * file list, so drop the envelope and keep what a timeline row needs: the
+ * directory entries, or the file text. Anything without the envelope passes
+ * through untouched, including `list` trees and grep output.
+ */
+export function cleanOpencodeReadOutput(output: string): string {
+  const kind = OPENCODE_READ_TYPE.exec(output)?.[1]?.toLowerCase();
+  if (kind === "directory") {
+    const entries = OPENCODE_ENTRIES.exec(output)?.[1];
+    return entries === undefined ? output : entries.trim();
+  }
+  if (kind === "file") {
+    const content = OPENCODE_CONTENT.exec(output)?.[1];
+    return content === undefined ? output : content.replace(/^\n+|\n+$/gu, "");
+  }
+  return output;
 }
 
 export interface ToolActivityPresentationInput {

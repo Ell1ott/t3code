@@ -1,4 +1,5 @@
 import type { AssetResource, OrchestrationV2TurnItem } from "@t3tools/contracts";
+import { cleanOpencodeReadOutput } from "@t3tools/shared/toolActivity";
 import { readToolOutputImage, toolOutputImages } from "@t3tools/shared/toolOutput";
 import * as DateTime from "effect/DateTime";
 
@@ -171,7 +172,11 @@ export function turnItemOutputText(item: OrchestrationV2TurnItem): string | null
     case "command_execution":
       return item.output?.trim() ? commandOutputText(item.output) || null : null;
     case "dynamic_tool":
-      return item.outputOmitted === true ? null : formatToolValue(item.output);
+      if (item.outputOmitted === true) return null;
+      // Older items stored OpenCode's XML-wrapped `read` output verbatim.
+      return typeof item.output === "string"
+        ? formatToolValue(cleanOpencodeReadOutput(item.output))
+        : formatToolValue(item.output);
     case "file_search":
       return item.results?.length
         ? item.results

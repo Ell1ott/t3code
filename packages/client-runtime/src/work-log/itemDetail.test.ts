@@ -52,4 +52,18 @@ describe("tool output images", () => {
     expect(turnItemOutputImages({ ...screenshot, output })).toEqual([]);
     expect(turnItemOutputText({ ...screenshot, output })).toBe("[image]");
   });
+
+  it("unwraps OpenCode directory listings stored before the adapter cleanup", () => {
+    const output = [
+      "<path>/Users/dev/project</path>",
+      "<type>directory</type>",
+      "<entries>",
+      ".cursor/",
+      ".git/",
+      "",
+      "(2 entries)",
+      "</entries>",
+    ].join("\n");
+    expect(turnItemOutputText({ ...screenshot, output })).toBe(".cursor/\n.git/\n\n(2 entries)");
+  });
 });

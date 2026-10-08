@@ -3,6 +3,7 @@ import { describe, expect, it } from "vite-plus/test";
 import {
   claudeSkillInvocation,
   classifyToolActivity,
+  cleanOpencodeReadOutput,
   collectToolFilePaths,
   deriveToolActivityPresentation,
   dynamicToolTitle,
@@ -74,12 +75,40 @@ describe("toolActivity", () => {
   });
 
   it("classifies Claude search tools ahead of their broad file-read request kind", () => {
-    for (const toolName of ["Glob", "Grep", "LS"]) {
+    for (const toolName of ["Glob", "Grep", "LS", "list"]) {
       expect(classifyToolActivity({ requestKind: "file-read", data: { toolName } })).toBe("search");
     }
     expect(classifyToolActivity({ requestKind: "file-read", data: { toolName: "Read" } })).toBe(
       "read",
     );
+  });
+
+  it("unwraps OpenCode read output instead of rendering its XML envelope", () => {
+    expect(
+      cleanOpencodeReadOutput(
+        [
+          "<path>/Users/dev/uwccr-school-scedules</path>",
+          "<type>directory</type>",
+          "<entries>",
+          ".cursor/",
+          ".cursorignore",
+          ".git/",
+          "",
+          "(3 entries)",
+          "</entries>",
+        ].join("\n"),
+      ),
+    ).toBe(".cursor/\n.cursorignore\n.git/\n\n(3 entries)");
+    expect(
+      cleanOpencodeReadOutput(
+        "<path>/tmp/a.ts</path>\n<type>file</type>\n<content>\n1: hello\n2: world\n</content>",
+      ),
+    ).toBe("1: hello\n2: world");
+  });
+
+  it("leaves non-enveloped tool output alone", () => {
+    expect(cleanOpencodeReadOutput("/tmp/a.ts/\n  b.ts\n")).toBe("/tmp/a.ts/\n  b.ts\n");
+    expect(cleanOpencodeReadOutput("<path>/tmp/a.ts</path>")).toBe("<path>/tmp/a.ts</path>");
   });
 
   it("formats read and search labels from structured input", () => {

@@ -4,7 +4,11 @@
  * metadata; only how they deliver those differs.
  */
 import type { OrchestrationV2TurnItem } from "@t3tools/contracts";
-import { formatReadToolLabel, formatSearchToolLabel } from "@t3tools/shared/toolActivity";
+import {
+  cleanOpencodeReadOutput,
+  formatReadToolLabel,
+  formatSearchToolLabel,
+} from "@t3tools/shared/toolActivity";
 
 // Search results stay on the timeline wire, so keep their text a preview.
 const SEARCH_PREVIEW_MAX_CHARS = 8_000;
@@ -34,6 +38,8 @@ export function openCodeToolProjectionKind(
     return "dynamic_tool";
   }
   if (
+    normalized === "list" ||
+    normalized === "ls" ||
     normalized.includes("glob") ||
     normalized.includes("grep") ||
     normalized.includes("search") ||
@@ -113,7 +119,11 @@ export function openCodeToolTurnItem(
       };
     }
     case "file_search": {
-      const pattern = recordString(input, "pattern", "query", "path", "filePath");
+      // A bare `list` has no query; its path is the target, not the pattern.
+      const isListing = tool.name.toLowerCase() === "list" || tool.name.toLowerCase() === "ls";
+      const pattern = isListing
+        ? undefined
+        : recordString(input, "pattern", "query", "path", "filePath");
       // OpenCode reports matches as plain text, so keep it as one result row
       // under the searched path, like the ACP search projection.
       const searchRoot = (recordString(input, "path", "filePath") ?? pattern)?.trim();
@@ -154,6 +164,9 @@ export function openCodeToolTurnItem(
     }
     case "dynamic_tool": {
       const readPath = recordString(input, "filePath", "path", "file");
+      // `read` on a directory returns an XML envelope around a plain entry
+      // list; store the entries so rows never render the raw tags.
+      const cleanedOutput = output === undefined ? undefined : cleanOpencodeReadOutput(output);
       return {
         ...base,
         title:
@@ -163,7 +176,7 @@ export function openCodeToolTurnItem(
         type: "dynamic_tool",
         toolName: tool.name,
         input,
-        ...(output === undefined ? {} : { output }),
+        ...(cleanedOutput === undefined ? {} : { output: cleanedOutput }),
       };
     }
   }
