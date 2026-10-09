@@ -375,7 +375,9 @@ export function formatReadToolLabel(path: string, extraCount = 0): string {
 
 const OPENCODE_READ_TYPE = /<type>\s*(directory|file)\s*<\/type>/iu;
 const OPENCODE_ENTRIES = /<entries>([\s\S]*?)<\/entries>/iu;
-const OPENCODE_CONTENT = /<content>([\s\S]*?)<\/content>/iu;
+// The closing delimiter sits on its own line; a literal `</content>` inside a
+// numbered file line must not end the match early and truncate the rest.
+const OPENCODE_CONTENT = /<content>([\s\S]*?)\r?\n<\/content>/iu;
 
 /**
  * OpenCode's `read` tool wraps its output in `<path>`/`<type>`/`<entries>` (or

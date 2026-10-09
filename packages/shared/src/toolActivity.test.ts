@@ -106,6 +106,14 @@ describe("toolActivity", () => {
     ).toBe("1: hello\n2: world");
   });
 
+  it("keeps literal closing-tag text inside numbered file lines", () => {
+    expect(
+      cleanOpencodeReadOutput(
+        "<path>/tmp/a.ts</path>\n<type>file</type>\n<content>\n1: hello\n2: </content> literal\n3: world\n</content>",
+      ),
+    ).toBe("1: hello\n2: </content> literal\n3: world");
+  });
+
   it("leaves non-enveloped tool output alone", () => {
     expect(cleanOpencodeReadOutput("/tmp/a.ts/\n  b.ts\n")).toBe("/tmp/a.ts/\n  b.ts\n");
     expect(cleanOpencodeReadOutput("<path>/tmp/a.ts</path>")).toBe("<path>/tmp/a.ts</path>");
